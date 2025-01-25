@@ -187,17 +187,29 @@ export default function Home() {
 
         {/* Loading State */}
         {extractPeople.isPending && (
-          <div className="mt-8 p-6 bg-white/10 rounded-xl w-full animate-pulse">
+          <div className="mt-8 w-full max-w-4xl">
             <h2 className="text-2xl font-bold text-white mb-6">
               Analyzing Screenshots...
             </h2>
-            <div className="space-y-4">
-              <Skeleton
-                count={3}
-                className="h-4"
-                baseColor="#ffffff20"
-                highlightColor="#ffffff40"
-              />
+            <div className="grid gap-6">
+              {[1, 2, 3].map((index) => (
+                <div
+                  key={index}
+                  className="bg-white/10 p-6 rounded-xl flex items-center gap-6 animate-pulse"
+                >
+                  <div className="flex-shrink-0">
+                    <div className="w-20 h-20 bg-white/20 rounded-lg" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-32 h-6 bg-white/20 rounded-full" />
+                    </div>
+                    <div className="w-48 h-7 bg-white/20 rounded mb-2" />
+                    <div className="w-72 h-5 bg-white/20 rounded" />
+                  </div>
+                  <div className="w-24 h-10 bg-white/20 rounded-lg" />
+                </div>
+              ))}
             </div>
           </div>
         )}

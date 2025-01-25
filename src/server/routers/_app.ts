@@ -1,11 +1,6 @@
 import { z } from "zod";
 import { procedure, router } from "../trpc";
-import { OpenAI } from "openai";
-
-const openAIKey = process.env.OPENAI_API_KEY;
-const openai = new OpenAI({
-  apiKey: openAIKey,
-});
+import { analyzeImageWithGPT, generateMorningBriefMarkdown } from "../utilities";
 
 export const appRouter = router({
   hello: procedure
@@ -20,50 +15,30 @@ export const appRouter = router({
       };
     }),
 
-  callOpenAi: procedure
+  generateMorningBrief: procedure
     .input(
       z.object({
-        text: z.string(),
+        images: z.array(z.string()),
       })
     )
-    .query(async (opts) => {
-      const chatCompletion = await openai.chat.completions.create({
-        messages: [{ role: "user", content: opts.input.text }],
-        model: "gpt-4",
-      });
-      return {
-        greeting: chatCompletion.choices[0].message.content,
-      };
-    }),
-
-  analyzeImage: procedure
-    .input(
-      z.object({
-        imageBase64: z.string(),
-      })
-    )
-    .query(async (opts) => {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4-vision-preview",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Please analyze this image and describe what you see." },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${opts.input.imageBase64}`,
-                },
-              },
-            ],
-          },
-        ],
-        max_tokens: 500,
-      });
+    .mutation(async (opts) => {
+      const BATCH_SIZE = 4;
+      const analyses = [];
       
+      // Process images in batches of 4
+      for (let i = 0; i < opts.input.images.length; i += BATCH_SIZE) {
+        const batch = opts.input.images.slice(i, i + BATCH_SIZE);
+        const batchAnalyses = await Promise.all(
+          batch.map(imageBase64 => analyzeImageWithGPT(imageBase64))
+        );
+        analyses.push(...batchAnalyses);
+      }
+
+      const brief = await generateMorningBriefMarkdown(analyses);
+
       return {
-        analysis: response.choices[0].message.content,
+        analyses,
+        brief,
       };
     }),
 });

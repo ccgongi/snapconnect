@@ -3,7 +3,44 @@ import { useState } from "react";
 
 export default function Home() {
   const [inputText, setInputText] = useState("C.C.");
-  const hello = trpc.callOpenAi.useQuery({ text: inputText });
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [analyses, setAnalyses] = useState<string[]>([]);
+  const [brief, setBrief] = useState<string>("");
+
+  const generateBrief = trpc.generateMorningBrief.useMutation({
+    onSuccess: (data) => {
+      setAnalyses(data.analyses);
+      setBrief(data.brief);
+    },
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files) {
+      setSelectedFiles(Array.from(e.dataTransfer.files));
+    }
+  };
+
+  const handleSubmit = async () => {
+    const imagePromises = selectedFiles.map((file) => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    const base64Images = await Promise.all(imagePromises);
+    generateBrief.mutate({ images: base64Images });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex flex-col items-center justify-center p-4">
@@ -18,32 +55,47 @@ export default function Home() {
         </p>
 
         {/* Upload/Input Area */}
-        <div className="w-full p-8 border-2 border-dashed border-white/30 rounded-xl hover:border-white/50 transition-all cursor-pointer bg-white/5 mb-8">
+        <div 
+          className="w-full p-8 border-2 border-dashed border-white/30 rounded-xl hover:border-white/50 transition-all cursor-pointer bg-white/5 mb-8"
+          onDrop={handleDrop}
+          onDragOver={(e) => e.preventDefault()}
+        >
           <div className="text-center">
             <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              className="w-full max-w-xl p-4 rounded-lg bg-white/20 backdrop-blur-md border-none text-white placeholder-white/70 focus:ring-2 focus:ring-white/50 focus:outline-none text-lg"
-              placeholder="Enter text or drop files here..."
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+              id="file-upload"
             />
-            <p className="mt-4 text-white/70">
-              Drag and drop your files here, or click to select files
-            </p>
+            <label htmlFor="file-upload" className="cursor-pointer">
+              <p className="mt-4 text-white/70">
+                {selectedFiles.length > 0 
+                  ? `${selectedFiles.length} files selected`
+                  : "Drag and drop your files here, or click to select files"}
+              </p>
+            </label>
           </div>
         </div>
 
         {/* Action Button */}
         <div className="text-center">
-          <button className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all transform hover:scale-105 backdrop-blur-sm shadow-lg">
-            Get Started
+          <button 
+            className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all transform hover:scale-105 backdrop-blur-sm shadow-lg"
+            onClick={handleSubmit}
+            disabled={selectedFiles.length === 0 || generateBrief.isPending}
+          >
+            {generateBrief.isPending ? "Processing..." : "Generate Brief"}
           </button>
         </div>
 
-        {/* API Response Display */}
-        {hello.data?.greeting && (
-          <div className="mt-6 text-center text-white/90">
-            {hello.data.greeting}
+        {/* Results Display */}
+        {brief && (
+          <div className="mt-8 p-6 bg-white/10 rounded-xl">
+            <h2 className="text-2xl font-bold text-white mb-4">Morning Brief</h2>
+            <div className="prose prose-invert">
+              {brief}
+            </div>
           </div>
         )}
       </div>

@@ -26,7 +26,7 @@ export default function Home() {
       </h1>
 
       <p className="text-lg text-gray-600 text-center max-w-md mb-8">
-        An app for C.C. to look weird with tons of screenshots of people
+        An app for C.C. to look cool with tons of screenshots of people
       </p>
 
       <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg transition-colors">

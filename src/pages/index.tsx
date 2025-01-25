@@ -2,7 +2,6 @@ import { trpc } from "../utils/trpc";
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 // import Markdown from "react-markdown";
-import Skeleton from "react-loading-skeleton";
 
 interface PersonInfo {
   name: string | null;

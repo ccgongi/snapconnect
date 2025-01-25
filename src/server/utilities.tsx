@@ -7,6 +7,14 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+interface PersonInfo {
+  name: string | null;
+  company: string | null;
+  role: string | null;
+  timestamp: string | null;
+  imageUrl: string;
+}
+
 export async function analyzeImageWithGPT(
   imageBase64: string
 ): Promise<string> {
@@ -40,31 +48,43 @@ export async function analyzeImageWithGPT(
   }
 }
 
-export async function generateMorningBriefMarkdown(
-  analyses: string[]
-): Promise<string> {
+export async function extractPersonFromImage(
+  imageBase64: string
+): Promise<PersonInfo> {
   try {
-    const analysisContext = analyses.join("\n\n");
-
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
-          role: "system",
-          content:
-            "You are a professional brief writer. Create concise, well-structured morning briefs in markdown format.",
-        },
-        {
           role: "user",
-          content: `Based on the following image analyses, create a morning brief in markdown format. Include relevant sections and highlights:\n\n${analysisContext}`,
+          content: [
+            {
+              type: "text",
+              text: "Extract the following information from this LinkedIn screenshot or professional photo: 1. Full Name 2. Company 3. Role/Title 4. Any visible timestamp or date of interaction. Return ONLY a JSON object with these fields: {name, company, role, timestamp}. If any field is not found, use null.",
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageBase64,
+              },
+            },
+          ],
         },
       ],
-      max_tokens: 2000,
+      max_tokens: 500,
+      response_format: { type: "json_object" },
     });
 
-    return response.choices[0].message.content || "";
+    const content = JSON.parse(response.choices[0].message.content || "{}");
+    return {
+      name: content.name || null,
+      company: content.company || null,
+      role: content.role || null,
+      timestamp: content.timestamp || null,
+      imageUrl: imageBase64,
+    };
   } catch (error) {
-    console.error("Error generating brief:", error);
-    throw new Error("Failed to generate morning brief");
+    console.error("Error analyzing image:", error);
+    throw new Error("Failed to extract person information");
   }
 }

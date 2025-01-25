@@ -1,8 +1,16 @@
 import { trpc } from "../utils/trpc";
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import Markdown from "react-markdown";
+// import Markdown from "react-markdown";
 import Skeleton from "react-loading-skeleton";
+
+interface PersonInfo {
+  name: string | null;
+  company: string | null;
+  role: string | null;
+  timestamp: string | null;
+  imageUrl: string;
+}
 
 export default function Home() {
   const [imageBase64Array, setImageBase64Array] = useState<string[]>([]);
@@ -42,27 +50,27 @@ export default function Home() {
     setImageBase64Array((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const [analyses, setAnalyses] = useState<string[]>([]);
-  const [brief, setBrief] = useState<string>("");
+  const [people, setPeople] = useState<PersonInfo[]>([]);
 
-  const generateBrief = trpc.generateMorningBrief.useMutation({
+  const extractPeople = trpc.extractPeople.useMutation({
     onSuccess: (data) => {
-      setAnalyses(data.analyses);
-      setBrief(data.brief);
+      setPeople(data.people);
     },
   });
 
   const handleSubmit = async () => {
-    // pass the imageBase64Array to the mutation
-    generateBrief.mutate({ images: imageBase64Array });
+    extractPeople.mutate({ images: imageBase64Array });
   };
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
       <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
         <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-          Image <span className="text-[hsl(280,100%,70%)]">Analyzer</span>
+          LinkedIn <span className="text-[hsl(280,100%,70%)]">Connect</span>
         </h1>
+        <h2 className="text-lg font-semibold text-white/70 -mt-6">
+          {"Upload screenshots of your interactions to find connections"}
+        </h2>
 
         {/* Image Preview Area */}
         {imageBase64Array.length > 0 && (
@@ -87,7 +95,7 @@ export default function Home() {
         )}
 
         {/* Dropzone - Hide when generating brief */}
-        {!generateBrief.isPending && (
+        {!extractPeople.isPending && (
           <div
             {...getRootProps()}
             className="w-full p-8 border-2 border-dashed border-white/30 rounded-xl hover:border-white/50 transition-all cursor-pointer bg-white/5 mb-8"
@@ -110,17 +118,66 @@ export default function Home() {
           <button
             className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all transform hover:scale-105 backdrop-blur-sm shadow-lg"
             onClick={handleSubmit}
-            disabled={imageBase64Array.length === 0 || generateBrief.isPending}
+            disabled={imageBase64Array.length === 0 || extractPeople.isPending}
           >
-            {generateBrief.isPending ? "Processing..." : "Generate Brief"}
+            {extractPeople.isPending ? "Processing..." : "Extract Connections"}
           </button>
         </div>
 
+        {/* Results Display */}
+        {people.length > 0 && (
+          <div className="mt-8 w-full max-w-4xl">
+            <h2 className="text-2xl font-bold text-white mb-6">
+              Found Connections
+            </h2>
+            <div className="grid gap-6">
+              {people.map((person, index) => (
+                <div
+                  key={index}
+                  className="bg-white/10 p-6 rounded-xl flex items-center gap-6"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={person.imageUrl}
+                    alt={person.name || "Profile"}
+                    className="w-20 h-20 object-cover rounded-lg"
+                  />
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold">
+                      {person.name || "Unknown"}
+                    </h3>
+                    <p className="text-white/70">Found on LinkedIn</p>
+                    <p className="text-sm text-white/90">
+                      {person.role} at {person.company}
+                    </p>
+                    {person.timestamp && (
+                      <p className="text-sm text-white/60">
+                        Met on {person.timestamp}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
+                    onClick={() =>
+                      window.open(
+                        "https://www.linkedin.com/search/results/people/",
+                        "_blank"
+                      )
+                    }
+                  >
+                    Connect
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Loading State */}
-        {generateBrief.isPending && (
+        {extractPeople.isPending && (
           <div className="mt-8 p-6 bg-white/10 rounded-xl w-full animate-pulse">
             <h2 className="text-2xl font-bold text-white mb-6">
-              Analyzing Images...
+              Analyzing Screenshots...
             </h2>
             <div className="space-y-4">
               <Skeleton
@@ -129,48 +186,6 @@ export default function Home() {
                 baseColor="#ffffff20"
                 highlightColor="#ffffff40"
               />
-              <Skeleton
-                count={2}
-                className="h-4 w-3/4"
-                baseColor="#ffffff20"
-                highlightColor="#ffffff40"
-              />
-              <Skeleton
-                count={1}
-                className="h-4 w-1/2"
-                baseColor="#ffffff20"
-                highlightColor="#ffffff40"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Results Display */}
-        {brief && (
-          <div className="mt-8 p-6 bg-white/10 rounded-xl w-full animate-fadeIn">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              Morning Brief
-            </h2>
-            <div className="prose prose-invert prose-headings:text-white prose-headings:font-bold prose-headings:mt-6 prose-headings:mb-4 prose-p:text-gray-200 prose-p:leading-relaxed prose-p:mb-4 prose-strong:text-white prose-li:text-gray-200 max-w-none">
-              <Markdown>{brief}</Markdown>
-            </div>
-          </div>
-        )}
-
-        {analyses.length > 0 && (
-          <div className="mt-8 p-6 bg-white/10 rounded-xl w-full animate-fadeIn">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              Individual Analyses
-            </h2>
-            <div className="space-y-8">
-              {analyses.map((analysis, index) => (
-                <div
-                  key={index}
-                  className="prose prose-invert prose-headings:text-white prose-headings:font-bold prose-headings:mt-6 prose-headings:mb-4 prose-p:text-gray-200 prose-p:leading-relaxed prose-p:mb-4 prose-strong:text-white prose-li:text-gray-200 max-w-none"
-                >
-                  <Markdown>{analysis}</Markdown>
-                </div>
-              ))}
             </div>
           </div>
         )}

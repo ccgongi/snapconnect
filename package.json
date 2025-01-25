@@ -16,11 +16,14 @@
     "@trpc/next": "^11.0.0-rc.724",
     "@trpc/react-query": "^11.0.0-rc.724",
     "@trpc/server": "^11.0.0-rc.724",
+    "dotenv": "^16.4.7",
     "next": "15.1.6",
     "openai": "^4.80.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.5",
+    "react-loading-skeleton": "^3.5.0",
+    "react-markdown": "^9.0.3",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -136,37 +136,49 @@ export default function Home() {
                   key={index}
                   className="bg-white/10 p-6 rounded-xl flex items-center gap-6"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={person.imageUrl}
-                    alt={person.name || "Profile"}
-                    className="w-20 h-20 object-cover rounded-lg"
-                  />
+                  <div className="flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={person.imageUrl}
+                      alt={person.name || "Profile"}
+                      className="w-20 h-20 object-cover rounded-lg"
+                    />
+                  </div>
                   <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full text-sm font-medium flex items-center gap-1">
+                        <svg
+                          className="w-4 h-4"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                        </svg>
+                        Found on LinkedIn
+                      </span>
+                    </div>
                     <h3 className="text-xl font-bold">
                       {person.name || "Unknown"}
                     </h3>
-                    <p className="text-white/70">Found on LinkedIn</p>
-                    <p className="text-sm text-white/90">
-                      {person.role} at {person.company}
-                    </p>
+                    {person.role && person.company && (
+                      <p className="text-sm text-white/90 mt-1">
+                        {person.role} • {person.company}
+                      </p>
+                    )}
                     {person.timestamp && (
-                      <p className="text-sm text-white/60">
+                      <p className="text-sm text-white/60 mt-1">
                         Met on {person.timestamp}
                       </p>
                     )}
                   </div>
-                  <button
-                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
-                    onClick={() =>
-                      window.open(
-                        "https://www.linkedin.com/search/results/people/",
-                        "_blank"
-                      )
-                    }
+                  <a
+                    href="https://www.linkedin.com/search/results/all/?keywords=emily%20herrara&origin=GLOBAL_SEARCH_HEADER&sid=-vU"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors text-white font-medium"
                   >
                     Connect
-                  </button>
+                  </a>
                 </div>
               ))}
             </div>
